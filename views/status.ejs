@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= monitor.name %> — Status · Pingpilot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --border-hover: #d4d4d8;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #4f46e5;
+      --accent-bg: #eeebff;
+      --green: #10b981;
+      --green-bg: #ecfdf5;
+      --green-border: #a7f3d0;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --yellow: #f59e0b;
+      --yellow-bg: #fffbeb;
+      --yellow-border: #fef3c7;
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: 
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.3;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse at top, black, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at top, black, transparent 80%);
+    }
+
+    nav, .container, footer { position: relative; z-index: 2; }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    
+    .brand { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 15px; 
+      font-weight: 600; 
+      letter-spacing: -0.02em; 
+    }
+    .brand em { color: var(--accent); font-style: normal; font-weight: 700; }
+    nav a { 
+      font-size: 13px; 
+      font-weight: 500;
+      color: var(--muted); 
+      text-decoration: none; 
+      transition: color 0.2s ease;
+    }
+    nav a:hover { color: var(--text); }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 56px 24px; }
+
+    /* HERO SECTION */
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 36px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .hero-left h1 { 
+      font-size: 32px; 
+      font-weight: 800; 
+      letter-spacing: -0.03em; 
+      color: var(--text);
+      margin-bottom: 6px; 
+    }
+    .hero-left .url { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 13px; 
+      color: var(--muted); 
+      background: #f4f4f5;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    
+    /* LIVE STATUS TAGS */
+    .status-tag {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .tag-up { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .tag-up .status-dot { background: var(--green); animation: pulse 2s infinite; }
+    
+    .tag-down { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+    .tag-down .status-dot { background: var(--red); animation: pulse 1s infinite; }
+    
+    .tag-paused, .tag-unknown { background: #f4f4f5; color: var(--muted); border: 1px solid var(--border); }
+    .tag-paused .status-dot { background: var(--muted); }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .tag-down .status-dot {
+      animation: pulse-red 1.5s infinite;
+    }
+    @keyframes pulse-red {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* STATS STRIP */
+    .stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .stat-box:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+    .stat-box .val { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .stat-box .key { 
+      font-size: 11px; 
+      font-weight: 600;
+      color: var(--muted); 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+    }
+
+    /* CHARTS PANELS */
+    .chart-section { margin-bottom: 32px; }
+    .chart-title {
+      font-size: 12px; 
+      font-weight: 700;
+      color: var(--muted); 
+      text-transform: uppercase; 
+      letter-spacing: 0.06em; 
+      margin-bottom: 14px; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chart-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    /* INCIDENTS SYSTEM */
+    .inc-item {
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      transition: border-color 0.2s ease;
+    }
+    .inc-item:hover { border-color: var(--border-hover); }
+    .inc-item.open { background: var(--red-bg); border-color: var(--red-border); }
+    
+    .inc-badge {
+      font-size: 11px; 
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      height: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-open { background: #fee2e2; color: var(--red); border: 1px solid var(--red-border); }
+    .badge-resolved { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    
+    .inc-body { font-size: 14px; color: #3f3f46; line-height: 1.6; }
+    .inc-body strong { color: var(--text); font-weight: 600; }
+    
+    .no-inc {
+      text-align: center;
+      padding: 36px;
+      background: var(--green-bg);
+      border: 1px solid var(--green-border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--green);
+      box-shadow: var(--shadow);
+    }
+
+    footer {
+      margin-top: 64px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 24px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 16px 24px; }
+      .stat-strip { grid-template-columns: 1fr; gap: 12px; }
+      .hero-left h1 { font-size: 26px; }
+      .hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+
+  <nav>
+    <div class="brand">ping<em>pilot</em></div>
+    <a href="/">← Dashboard</a>
+  </nav>
+
+  <div class="container">
+
+    <div class="hero">
+      <div class="hero-left">
+        <h1><%= monitor.name %></h1>
+        <div class="url"><%= monitor.url %></div>
+      </div>
+      <% const statusKey = !monitor.is_active ? 'paused' : monitor.current_status; %>
+      <div class="status-tag tag-<%= statusKey %>">
+        <span class="status-dot"></span>
+        <% if (statusKey === 'up') { %>Operational
+        <% } else if (statusKey === 'down') { %>Major Outage
+        <% } else if (statusKey === 'paused') { %>Paused
+        <% } else { %>Checking System...<% } %>
+      </div>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-box">
+        <div class="val" style="color: var(--green);"><%= uptime30d %>%</div>
+        <div class="key">30-Day Uptime</div>
+      </div>
+      <div class="stat-box">
+        <div class="val"><%= incidents.length %></div>
+        <div class="key">Total Incidents</div>
+      </div>
+      <div class="stat-box">
+        <div class="val" style="color:<%= incidents.filter(i => !i.resolved_at).length > 0 ? 'var(--red)' : 'var(--green)' %>">
+          <%= incidents.filter(i => !i.resolved_at).length > 0 ? 'Active' : 'None' %>
+        </div>
+        <div class="key">Current State</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">Uptime History (Last 30 Days)</div>
+      <div class="chart-wrap">
+        <canvas id="uptimeChart" height="90"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">Average Response Time (ms)</div>
+      <div class="chart-wrap">
+        <canvas id="responseChart" height="90"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">Incident History Log</div>
+      <% if (incidents.length === 0) { %>
+        <div class="no-inc">✓ All systems operational — no issues detected reported in the last 30 days.</div>
+      <% } else { %>
+        <% incidents.forEach(inc => { %>
+          <div class="inc-item <%= inc.resolved_at ? 'resolved' : 'open' %>">
+            <span class="inc-badge <%= inc.resolved_at ? 'badge-resolved' : 'badge-open' %>">
+              <%= inc.resolved_at ? 'Resolved' : 'Active' %>
+            </span>
+            <div class="inc-body">
+              <strong>Incident Initiated:</strong> <%= new Date(inc.started_at).toLocaleString() %><br>
+              <% if (inc.resolved_at) { %>
+                <strong>Resolution Time:</strong> <%= new Date(inc.resolved_at).toLocaleString() %><br>
+              <% } %>
+              <% if (inc.cause) { %><strong>Root Cause:</strong> <%= inc.cause %><% } %>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+  </div>
+
+  <footer>System checks every <%= monitor.check_interval %>s • Data metrics reflect the last 30 days tracking profile</footer>
+
+  <script>
+    const uptimeLabels = <%- JSON.stringify(history.map(h => new Date(h.day).toLocaleDateString())) %>;
+    const uptimeData = <%- JSON.stringify(history.map(h => h.uptimePercent)) %>;
+
+    new Chart(document.getElementById('uptimeChart'), {
+      type: 'bar',
+      data: {
+        labels: uptimeLabels,
+        datasets: [{
+          data: uptimeData,
+          backgroundColor: uptimeData.map(v => v >= 99.9 ? '#10b981' : v >= 95 ? '#f59e0b' : '#ef4444'),
+          borderRadius: 4,
+          hoverBackgroundColor: uptimeData.map(v => v >= 99.9 ? '#059669' : v >= 95 ? '#d97706' : '#dc2626'),
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { min: 0, max: 100, ticks: { color: '#71717a', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#f4f4f5' } },
+          x: { ticks: { color: '#71717a', font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const rtLabels = <%- JSON.stringify(responseTimeHistory.map(h => new Date(h.day).toLocaleDateString())) %>;
+    const rtData = <%- JSON.stringify(responseTimeHistory.map(h => h.avgMs)) %>;
+
+    new Chart(document.getElementById('responseChart'), {
+      type: 'line',
+      data: {
+        labels: rtLabels,
+        datasets: [{
+          data: rtData,
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79, 70, 229, 0.04)',
+          fill: true,
+          tension: 0.25,
+          pointBackgroundColor: '#4f46e5',
+          pointHoverBackgroundColor: '#4f46e5',
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#71717a', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#f4f4f5' } },
+          x: { ticks: { color: '#71717a', font: { family: 'JetBrains Mono', size: 10 } }, grid: { display: false } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+
+</body>
+</html>

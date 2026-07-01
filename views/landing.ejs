@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>pingpilot — Website Monitoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --border-hover: #d4d4d8;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-light: #e0e7ff;
+      --green: #10b981;
+      --red: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND ARCHITECTURE */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: 
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.4;
+      pointer-events: none;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+    .glow-bg {
+      position: absolute;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    nav, .hero, .ticker-wrap, .features-section, .cta-section, footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* NAVIGATION */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+      border-bottom: 1px solid rgba(228, 228, 231, 0.5);
+      background: rgba(250, 250, 250, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .brand em { color: var(--accent); font-style: normal; font-weight: 700; }
+    
+    .btn-login {
+      padding: 10px 20px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-login:hover {
+      background: var(--text);
+      color: var(--surface);
+      border-color: var(--text);
+    }
+
+    /* HERO SECTION */
+    .hero {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 120px 40px 80px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-light);
+      border: 1px solid rgba(79, 70, 229, 0.2);
+      padding: 6px 14px;
+      border-radius: 99px;
+      margin-bottom: 32px;
+      box-shadow: 0 0 20px rgba(79, 70, 229, 0.1);
+    }
+    .hero h1 {
+      font-size: 68px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+    .hero h1 u {
+      text-decoration: none;
+      color: var(--accent);
+      position: relative;
+    }
+    .hero h1 u::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: rgba(79, 70, 229, 0.2);
+      border-radius: 2px;
+      z-index: -1;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .hero-actions { 
+      display: flex; 
+      flex-direction: column;
+      gap: 16px; 
+      align-items: center; 
+    }
+    .btn-primary {
+      padding: 16px 32px;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    }
+    .hero-note { font-size: 13px; font-weight: 500; color: #a1a1aa; }
+
+    /* FLOATING VISUALS */
+    .hero-visual {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+    .mock-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: var(--shadow-xl);
+      width: 100%;
+      max-width: 480px;
+      transition: transform 0.3s ease;
+    }
+    .mock-card:first-child { z-index: 2; }
+    .mock-card:last-child { 
+      margin-top: -20px; 
+      margin-left: 120px; 
+      z-index: 1; 
+      opacity: 0.9;
+      transform: scale(0.95);
+    }
+    .mock-card:hover { transform: translateY(-4px) scale(1.02); z-index: 3; opacity: 1; }
+    
+    .mock-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .mock-dot.green { background: var(--green); animation: pulse 2s infinite; }
+    .mock-dot.red { background: var(--red); animation: pulse-red 1.5s infinite; }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .mock-info { flex: 1; text-align: left; }
+    .mock-info .mname { font-size: 15px; font-weight: 700; color: var(--text); }
+    .mock-info .murl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .mock-uptime { font-size: 18px; font-weight: 800; color: var(--text); }
+    
+    .mock-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .badge-up { background: #ecfdf5; color: var(--green); border: 1px solid #a7f3d0; }
+    .badge-down { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
+
+    /* INFINITE TICKER */
+    .ticker-wrap {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px 0;
+      overflow: hidden;
+      display: flex;
+    }
+    .ticker {
+      display: flex;
+      gap: 48px;
+      white-space: nowrap;
+      animation: scroll 20s linear infinite;
+      padding-left: 48px;
+    }
+    .ticker:hover { animation-play-state: paused; }
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    .tick-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .tick-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+    /* FEATURES GRID */
+    .features-section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 100px 40px;
+    }
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feat:hover { 
+      transform: translateY(-4px); 
+      box-shadow: var(--shadow-md);
+      border-color: rgba(79, 70, 229, 0.3);
+    }
+    .feat-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-light);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .feat h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.02em; }
+    .feat p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* DARK CTA SECTION */
+    .cta-section {
+      background: #09090b;
+      color: white;
+      text-align: center;
+      padding: 100px 40px;
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+    }
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at center, rgba(79,70,229,0.15) 0%, transparent 60%),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+    }
+    .cta-content { position: relative; z-index: 2; }
+    .cta-section h2 {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .cta-section p { color: #a1a1aa; font-size: 16px; margin-bottom: 32px; }
+    .btn-cta {
+      padding: 16px 36px;
+      background: white;
+      color: #09090b;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s ease;
+      display: inline-block;
+    }
+    .btn-cta:hover { background: #e4e4e7; }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 16px 24px; }
+      .hero { padding: 80px 24px 60px; }
+      .hero h1 { font-size: 48px; }
+      .mock-card:last-child { margin-left: 0; margin-top: 16px; transform: scale(1); }
+      .features-section { padding: 60px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="glow-bg"></div>
+
+  <nav>
+    <div class="brand">ping<em>pilot</em></div>
+    <a href="/auth/google" class="btn-login">Sign in with Google →</a>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-tag">Automated Uptime Monitoring</div>
+    <h1>Your sites,<br><u>always watched</u>.</h1>
+    <p>PingPilot checks your websites every 60 seconds and emails you the moment something breaks — with full uptime history and response time graphs.</p>
+    <div class="hero-actions">
+      <a href="/auth/google" class="btn-primary">Start monitoring free</a>
+      <span class="hero-note">No credit card required · One-click Google login</span>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="mock-card">
+      <div class="mock-dot green"></div>
+      <div class="mock-info">
+        <div class="mname">My Portfolio</div>
+        <div class="murl">https://myportfolio.dev</div>
+      </div>
+      <div class="mock-uptime">99.98%</div>
+      <span class="mock-badge badge-up">Operational</span>
+    </div>
+    
+    <div class="mock-card">
+      <div class="mock-dot red"></div>
+      <div class="mock-info">
+        <div class="mname">API Server</div>
+        <div class="murl">https://api.myapp.com</div>
+      </div>
+      <div class="mock-uptime">97.30%</div>
+      <span class="mock-badge badge-down">Outage</span>
+    </div>
+  </div>
+
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <div class="tick-item"><span class="tick-dot"></span> HTTP checks every 60s</div>
+      <div class="tick-item"><span class="tick-dot"></span> Instant email alerts</div>
+      <div class="tick-item"><span class="tick-dot"></span> 30-day uptime history</div>
+      <div class="tick-item"><span class="tick-dot"></span> Response time tracking</div>
+      <div class="tick-item"><span class="tick-dot"></span> Public status pages</div>
+      <div class="tick-item"><span class="tick-dot"></span> Pause & resume anytime</div>
+    </div>
+    <div class="ticker" aria-hidden="true">
+      <div class="tick-item"><span class="tick-dot"></span> HTTP checks every 60s</div>
+      <div class="tick-item"><span class="tick-dot"></span> Instant email alerts</div>
+      <div class="tick-item"><span class="tick-dot"></span> 30-day uptime history</div>
+      <div class="tick-item"><span class="tick-dot"></span> Response time tracking</div>
+      <div class="tick-item"><span class="tick-dot"></span> Public status pages</div>
+      <div class="tick-item"><span class="tick-dot"></span> Pause & resume anytime</div>
+    </div>
+  </div>
+
+  <div class="features-section">
+    <div class="eyebrow">— Platform Features</div>
+    <div class="features-grid">
+      <div class="feat">
+        <div class="feat-num">01</div>
+        <h3>Real-time pings</h3>
+        <p>HTTP checks run on your chosen interval. Every single result is securely stored, nothing discarded.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">02</div>
+        <h3>Email on every change</h3>
+        <p>Immediate down alerts with root cause analysis. Recovery alerts detail exact downtime duration.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">03</div>
+        <h3>Uptime & response graphs</h3>
+        <p>Visualize your 30-day daily uptime percentage alongside a line graph for average response latency.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">04</div>
+        <h3>Shareable status pages</h3>
+        <p>Each monitor gets a dedicated public URL. No authentication required for your users to view it.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">05</div>
+        <h3>Pause without losing data</h3>
+        <p>Stop checks temporarily for maintenance. Your history stays intact, ready to resume whenever.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-num">06</div>
+        <h3>Custom check intervals</h3>
+        <p>Select 30s, 60s, 5 min, or 10 min cycles — uniquely configured per monitor, not globally applied.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <div class="cta-content">
+      <h2>Set it up in 30 seconds.</h2>
+      <p>Sign in, paste a URL, and you're done. We handle the background processing.</p>
+      <a href="/auth/google" class="btn-cta">Get started free →</a>
+    </div>
+  </div>
+
+  <footer>pingpilot · engineered with node.js + postgresql</footer>
+
+</body>
+</html>

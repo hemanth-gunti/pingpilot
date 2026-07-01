@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>pingpilot — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --border-hover: #d4d4d8;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --accent-light: #e0e7ff;
+      --green: #10b981;
+      --green-bg: #ecfdf5;
+      --green-border: #a7f3d0;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --yellow: #f59e0b;
+      --yellow-bg: #fffbeb;
+      --yellow-border: #fef3c7;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* BACKGROUND ARCHITECTURE */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: 
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.3;
+      pointer-events: none;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+
+    nav, .container { position: relative; z-index: 2; }
+
+    /* NAVIGATION */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 48px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .brand em { color: var(--accent); font-style: normal; font-weight: 700; }
+    
+    .nav-right { display: flex; align-items: center; gap: 20px; font-size: 13px; }
+    .nav-right span { font-weight: 600; color: var(--text); }
+    .nav-right a { 
+      color: var(--muted); 
+      text-decoration: none; 
+      font-weight: 500; 
+      transition: color 0.2s ease;
+    }
+    .nav-right a:hover { color: var(--red); }
+
+    /* LAYOUT */
+    .container { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+    /* PAGE HEADER & SUMMARY */
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .page-header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .page-header p { font-size: 14px; color: var(--muted); }
+
+    .summary { display: flex; gap: 12px; }
+    .summary-chip {
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .summary-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .summary-chip.total .summary-dot { background: var(--muted); }
+    .summary-chip.green { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+    .summary-chip.green .summary-dot { background: var(--green); }
+    .summary-chip.red { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+    .summary-chip.red .summary-dot { background: var(--red); }
+
+    /* ADD MONITOR FORM */
+    .add-form-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-sm);
+    }
+    .add-form-wrap label {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .form-row input, .form-row select {
+      flex: 1;
+      min-width: 150px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .form-row input:focus, .form-row select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      background: var(--surface);
+    }
+    .btn-add {
+      padding: 10px 24px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+    }
+    .btn-add:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3); }
+
+    /* MONITOR LIST */
+    .monitor-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .monitor-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    .monitor-row:hover { 
+      border-color: var(--border-hover); 
+      box-shadow: var(--shadow-md); 
+      transform: translateY(-1px);
+    }
+
+    /* Status Animations */
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .status-up .status-indicator { background: var(--green-bg); border: 1px solid var(--green-border); }
+    .status-up .status-dot { background: var(--green); animation: pulse-green 2s infinite; }
+    
+    .status-down .status-indicator { background: var(--red-bg); border: 1px solid var(--red-border); }
+    .status-down .status-dot { background: var(--red); animation: pulse-red 1.5s infinite; }
+    
+    .status-paused .status-indicator { background: var(--yellow-bg); border: 1px solid var(--yellow-border); }
+    .status-paused .status-dot { background: var(--yellow); }
+    
+    .status-unknown .status-indicator { background: #f4f4f5; border: 1px solid var(--border); }
+    .status-unknown .status-dot { background: var(--muted); }
+
+    .monitor-info { flex: 1; min-width: 0; }
+    .monitor-info .name { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+    .monitor-info .url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .monitor-uptime { text-align: right; flex-shrink: 0; border-right: 1px solid var(--border); padding-right: 24px; margin-right: 8px;}
+    .monitor-uptime .pct { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .monitor-uptime .pct-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .monitor-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    
+    .btn-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-link:hover { background: var(--accent-light); }
+
+    .action-btn {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all 0.2s ease;
+      background: transparent;
+    }
+    .action-btn.warn { color: var(--yellow); border-color: var(--yellow-border); }
+    .action-btn.warn:hover { background: var(--yellow-bg); }
+    
+    .action-btn.success { color: var(--green); border-color: var(--green-border); }
+    .action-btn.success:hover { background: var(--green-bg); }
+    
+    .action-btn.danger { color: var(--red); border-color: transparent; opacity: 0.7; }
+    .action-btn.danger:hover { background: var(--red-bg); border-color: var(--red-border); opacity: 1; }
+
+    /* EMPTY STATE */
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      background: var(--surface);
+      border: 1px dashed var(--border-hover);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .empty .mono { font-family: 'JetBrains Mono', monospace; font-size: 32px; color: var(--border-hover); margin-bottom: 16px; }
+    .empty p { font-size: 15px; color: var(--muted); font-weight: 500; }
+
+    @media (max-width: 768px) {
+      nav { padding: 16px 24px; }
+      .header-section { flex-direction: column; align-items: flex-start; }
+      .monitor-row { flex-wrap: wrap; gap: 16px; padding: 16px; }
+      .monitor-uptime { border-right: none; padding-right: 0; margin-right: 0; text-align: left; width: 100%; border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+      .monitor-uptime .pct-label { margin-top: 0; }
+      .monitor-actions { width: 100%; justify-content: space-between; background: var(--bg); padding: 8px; border-radius: 8px;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+
+  <nav>
+    <div class="brand">ping<em>pilot</em></div>
+    <div class="nav-right">
+      <span><%= user.name %></span>
+      <a href="/auth/logout">Sign Out</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div class="header-section">
+      <div class="page-header">
+        <h1>Your Monitors</h1>
+        <p>Active sites being checked at their configured intervals.</p>
+      </div>
+
+      <!-- Summary chips -->
+      <div class="summary">
+        <div class="summary-chip total"><span class="summary-dot"></span> <%= monitors.length %> Total</div>
+        <div class="summary-chip green"><span class="summary-dot"></span> <%= monitors.filter(m => m.current_status === 'up' && m.is_active).length %> Up</div>
+        <% if (monitors.filter(m => m.current_status === 'down').length > 0) { %>
+          <div class="summary-chip red"><span class="summary-dot"></span> <%= monitors.filter(m => m.current_status === 'down').length %> Down</div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Add form -->
+    <div class="add-form-wrap">
+      <label>Deploy New Monitor</label>
+      <form class="form-row" method="POST" action="/api/monitors">
+        <input type="text" name="name" placeholder="Monitor Name (e.g. API Gateway)" required>
+        <input type="url" name="url" placeholder="https://api.yourdomain.com" required>
+        <select name="checkInterval">
+          <option value="30">Every 30 seconds</option>
+          <option value="60" selected>Every 60 seconds</option>
+          <option value="300">Every 5 minutes</option>
+          <option value="600">Every 10 minutes</option>
+        </select>
+        <button class="btn-add" type="submit">+ Add Monitor</button>
+      </form>
+    </div>
+
+    <!-- Monitor list -->
+    <div class="monitor-list">
+      <% if (monitors.length === 0) { %>
+        <div class="empty">
+          <div class="mono">{ }</div>
+          <p>No active monitors. Add your first endpoint above.</p>
+        </div>
+      <% } else { %>
+        <% monitors.forEach(m => { %>
+          <% const statusClass = !m.is_active ? 'paused' : m.current_status; %>
+          <div class="monitor-row status-<%= statusClass %>">
+
+            <div class="status-indicator">
+              <div class="status-dot"></div>
+            </div>
+
+            <div class="monitor-info">
+              <div class="name"><%= m.name %></div>
+              <div class="url"><%= m.url %></div>
+            </div>
+
+            <div class="monitor-uptime">
+              <div class="pct"><%= m.uptime30d %>%</div>
+              <div class="pct-label">30-Day Uptime</div>
+            </div>
+
+            <div class="monitor-actions">
+              <a href="/api/monitors/<%= m.id %>/status-page" target="_blank" class="btn-link">Status Page ↗</a>
+
+              <% if (m.is_active) { %>
+                <form method="POST" action="/api/monitors/<%= m.id %>/pause" style="margin: 0;">
+                  <button class="action-btn warn" type="submit">Pause</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/api/monitors/<%= m.id %>/resume" style="margin: 0;">
+                  <button class="action-btn success" type="submit">Resume</button>
+                </form>
+              <% } %>
+
+              <form method="POST" action="/api/monitors/<%= m.id %>/delete" style="margin: 0;">
+                <button class="action-btn danger" type="submit">Delete</button>
+              </form>
+            </div>
+
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+  </div>
+
+</body>
+</html>
